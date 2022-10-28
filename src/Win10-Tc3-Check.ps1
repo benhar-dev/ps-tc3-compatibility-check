@@ -52,9 +52,35 @@ function ConsoleLog-Fail {
 	Write-Host $Info
 }
 
+Function pause ($message)
+{
+    # Check if running Powershell ISE
+    if ($psISE)
+    {
+        Add-Type -AssemblyName System.Windows.Forms
+        [System.Windows.Forms.MessageBox]::Show("$message")
+    }
+    else
+    {
+        Write-Host "$message" -ForegroundColor Yellow
+        $x = $host.ui.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+    }
+}
+
 # ----------------------------------------------------------------------------
 
 ConsoleLog-Title "TwinCAT Runtime Compatibility Check (Beta)"
+
+$currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
+
+if ($currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) { 
+    ConsoleLog-Pass "Script running as Administrator"
+}else {
+    ConsoleLog-Fail "Script not running as Administrator. Please run this by right clicking and select 'Run as Administrator'"
+}
+
+# services
+# --------
 
 $hypervheartbeat = Get-Service -name vmicheartbeat
 
@@ -71,12 +97,23 @@ if ($hypervheartbeat.Status -contains 'Stopped') {
 $bcd = bcdedit
 
 if ($bcd.Contains('disabledynamictick      Yes')) { 
-  ConsoleLog-Pass "Disable dynamic tick has been set."
+  ConsoleLog-Pass "Disable dynamic tick has been correctly set."
 }else {
   ConsoleLog-Fail "Disable dynamic tick has not been set. Please run C:\TwinCAT\3.1\System\win8settick.bat as Administrator"
 }
+
+if ($bcd.Contains('useplatformtick         Yes')) { 
+  ConsoleLog-Pass "Use platform tick has been correctly set."
+}else {
+  ConsoleLog-Fail "Use platform tick has not been set. Please run C:\TwinCAT\3.1\System\win8settick.bat as Administrator"
+}
+
 
 # Windows feature check
 # ---------------------
 
 #Get-WindowsOptionalFeature -Online -FeatureName *Hyper-V*
+
+
+# done 
+pause('Done')
