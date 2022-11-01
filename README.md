@@ -17,6 +17,9 @@ in perpetuity.
 ## Overview 
 This is a collection of powershell scripts used to identify common TwinCAT 3 incompatible settings in Windows.
 
+## Screenshot
+![image](./docs/images/Screenshot.gif)
+
 ## Getting Started
 ### Windows 7
 TBA
