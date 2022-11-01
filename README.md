@@ -25,4 +25,4 @@ This is a collection of powershell scripts used to identify common TwinCAT 3 inc
 TBA
 
 ### Windows 10
-Run Win10-Tc3-Check.ps1 as administrator
+Run Win10-Tc3-Check.ps1

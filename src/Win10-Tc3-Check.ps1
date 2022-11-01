@@ -14,7 +14,19 @@
 # IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # -------------------------------------------------------------------------------------------------------------------------------
 
-#This software is a work in progress with more checks being added over time.
+param([switch]$Elevated)
+function Test-Admin {
+    $currentUser = New-Object Security.Principal.WindowsPrincipal $([Security.Principal.WindowsIdentity]::GetCurrent())
+    $currentUser.IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)
+}
+if ((Test-Admin) -eq $false)  {
+    if ($elevated) {
+        # tried to elevate, did not work, aborting
+    } else {
+        Start-Process powershell.exe -Verb RunAs -ArgumentList ('-noprofile -noexit -file "{0}" -elevated' -f ($myinvocation.MyCommand.Definition))
+    }
+    exit
+}
 
 cls
 
@@ -85,6 +97,7 @@ Function PauseWithMessage
 }
 
 # ----------------------------------------------------------------------------
+
 
 DisplayTitle "TwinCAT Runtime Compatibility Check (Beta)"
 DisplaySubTitle "Powershell checks"
@@ -223,5 +236,5 @@ DisplaySubTitle "Kernal checks"
     }
 
 DisplaySubTitle "Checks Complete"
-# done 
 PauseWithMessage('Done')
+Exit
