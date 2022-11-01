@@ -78,7 +78,8 @@ Function PauseWithMessage
     }
     else
     {
-        Write-Host "$message" -ForegroundColor Yellow
+        Write-Host "$message"
+        Write-Host "Press Any Key..."
         $x = $host.ui.RawUI.ReadKey("NoEcho,IncludeKeyDown")
     }
 }
@@ -93,7 +94,9 @@ DisplaySubTitle "Powershell checks"
     if ($currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) { 
         ReportPass "Script is running as Administrator."
     }else {
-        ReportFail "Script not running as Administrator. Please run this by right clicking and select 'Run as Administrator'"
+        ReportFail "Script not running as Administrator. Please run this script by right clicking and select 'Run as Administrator'"
+        PauseWithMessage('Unable to continue')
+        Exit
     }
 
 DisplaySubTitle "Windows services checks"
