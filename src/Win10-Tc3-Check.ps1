@@ -14,46 +14,62 @@
 # IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # -------------------------------------------------------------------------------------------------------------------------------
 
-# This software is a work in progress
+#This software is a work in progress with more checks being added over time.
 
 cls
 
-function ConsoleLog-Title {
+function DisplayTitle {
 	[CmdletBinding()]
 	param(
 		[Parameter()]
-		[string] $Info
+		[string] $title
 	)
-	Write-Host $Info
-    Write-Host ("-" * $Info.Length)
+	Write-Host $title
+    Write-Host ("-" * $title.Length)
 }
 
-function ConsoleLog-Pass {
+function DisplaySubTitle {
 	[CmdletBinding()]
 	param(
 		[Parameter()]
-		[string] $Info
+		[string] $subtitle
 	)
-    Write-Host -NoNewline '['
+    Write-Host ""
+	Write-Host $subtitle
+}
+
+function ReportPass {
+	[CmdletBinding()]
+	param(
+		[Parameter()]
+		[string] $info
+	)
+    Write-Host -NoNewline '   ['
 	Write-Host -ForegroundColor Green -NoNewLine ([Char]8730)
     Write-Host -NoNewline '] '
-	Write-Host $Info
+	Write-Host $info
 }
 
-function ConsoleLog-Fail {
+function ReportFail {
 	[CmdletBinding()]
 	param(
 		[Parameter()]
-		[string] $Info
+		[string] $info
 	)
-    Write-Host -NoNewline '['
+    Write-Host -NoNewline '   ['
 	Write-Host -ForegroundColor Red -NoNewLine 'X'
     Write-Host -NoNewline '] '
-	Write-Host $Info
+	Write-Host $info
+
 }
 
-Function pause ($message)
+Function PauseWithMessage
 {
+    [CmdletBinding()]
+	param(
+		[Parameter()]
+		[string] $message
+	)
     # Check if running Powershell ISE
     if ($psISE)
     {
@@ -69,51 +85,140 @@ Function pause ($message)
 
 # ----------------------------------------------------------------------------
 
-ConsoleLog-Title "TwinCAT Runtime Compatibility Check (Beta)"
+DisplayTitle "TwinCAT Runtime Compatibility Check (Beta)"
+DisplaySubTitle "Powershell checks"
 
-$currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
+    $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
 
-if ($currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) { 
-    ConsoleLog-Pass "Script running as Administrator"
-}else {
-    ConsoleLog-Fail "Script not running as Administrator. Please run this by right clicking and select 'Run as Administrator'"
-}
+    if ($currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) { 
+        ReportPass "Script is running as Administrator."
+    }else {
+        ReportFail "Script not running as Administrator. Please run this by right clicking and select 'Run as Administrator'"
+    }
 
-# services
-# --------
+DisplaySubTitle "Windows services checks"
 
 $hypervheartbeat = Get-Service -name vmicheartbeat
 
 if ($hypervheartbeat.Status -contains 'Stopped') { 
-    ConsoleLog-Pass "Hyper-V Heartbeat service is stopped."
+    ReportPass "Hyper-V Heartbeat service is stopped."
 }else {
-    ConsoleLog-Fail "Hyper-V Heartbeat service is running.  This indicates that Hyper-V is enabled."
+    ReportFail "Hyper-V Heartbeat service is running. This indicates that Hyper-V is enabled."
 }
 
 
-# bcd check
-# ---------
+DisplaySubTitle "Bios checks"
 
-$bcd = bcdedit
+    # bcd check, these are settings in the bios which are configured using win8settick.bat
+    $bcd = bcdedit
 
-if ($bcd.Contains('disabledynamictick      Yes')) { 
-  ConsoleLog-Pass "Disable dynamic tick has been correctly set."
-}else {
-  ConsoleLog-Fail "Disable dynamic tick has not been set. Please run C:\TwinCAT\3.1\System\win8settick.bat as Administrator"
-}
+    if ($bcd.Contains('disabledynamictick      Yes')) { 
+      ReportPass "Disable dynamic tick has been correctly set."
+    }else {
+      ReportFail "Disable dynamic tick has not been set. Please run C:\TwinCAT\3.1\System\win8settick.bat as Administrator"
+    }
 
-if ($bcd.Contains('useplatformtick         Yes')) { 
-  ConsoleLog-Pass "Use platform tick has been correctly set."
-}else {
-  ConsoleLog-Fail "Use platform tick has not been set. Please run C:\TwinCAT\3.1\System\win8settick.bat as Administrator"
-}
+    if ($bcd.Contains('useplatformtick         Yes')) { 
+      ReportPass "Use platform tick has been correctly set."
+    }else {
+      ReportFail "Use platform tick has not been set. Please run C:\TwinCAT\3.1\System\win8settick.bat as Administrator"
+    }
+
+    # virtualization enabled in firmware check (VT-X)
+    $systemInfo = systeminfo
+    if ($systemInfo -Like '*Virtualization Enabled In Firmware: Yes') { 
+      ReportPass "Virtualization (VT-X) is enabled In Firmware."
+    }else {
+      ReportFail "Virtualization (VT-X) is disabled In Firmware."
+    }
 
 
-# Windows feature check
-# ---------------------
+DisplaySubTitle "Windows feature checks"
 
-#Get-WindowsOptionalFeature -Online -FeatureName *Hyper-V*
+    # Windows feature Hyper-V
+    $hyperv = Get-WindowsOptionalFeature -FeatureName Microsoft-Hyper-V-All -Online
 
+    if($hyperv.State -eq "Disabled") {
+        ReportPass "Hyper-V Windows Feature is disabled."
+    } else {
+        ReportFail "Hyper-V Windows Feature is enabled. You will need to disable this using 'Turn Windows Features On or Off', and unticking Hyper-V"
+    }
 
+    # Windows feature Windows Sandbox
+    $sandbox = Get-WindowsOptionalFeature -FeatureName Containers-DisposableClientVM -Online
+
+    if($sandbox.State -eq "Disabled") {
+        ReportPass "Windows Sandbox Feature is disabled."
+    } else {
+        ReportFail "Windows Sandbox Feature is enabled. You will need to disable this using 'Turn Windows Features On or Off', and unticking Windows Sandbox"
+    }
+
+    # Windows feature Virtual Machine Platform
+    $virtualMachinePlatform = Get-WindowsOptionalFeature -FeatureName VirtualMachinePlatform -Online
+
+    if($virtualMachinePlatform.State -eq "Disabled") {
+        ReportPass "Virtual Machine Platform Feature is disabled."
+    } else {
+        ReportFail "Virtual Machine Platform Feature is enabled. You will need to disable this using 'Turn Windows Features On or Off', and unticking Virtual Machine Platform"
+    }
+
+DisplaySubTitle "Kernal checks"
+
+    # Kernal - bootDMAProtection
+    $bootDMAProtectionCheck =
+    @"
+      namespace SystemInfo
+        {
+          using System;
+          using System.Runtime.InteropServices;
+
+          public static class NativeMethods
+          {
+            internal enum SYSTEM_DMA_GUARD_POLICY_INFORMATION : int
+            {
+                /// </summary>
+                SystemDmaGuardPolicyInformation = 202
+            }
+
+            [DllImport("ntdll.dll")]
+            internal static extern Int32 NtQuerySystemInformation(
+              SYSTEM_DMA_GUARD_POLICY_INFORMATION SystemDmaGuardPolicyInformation,
+              IntPtr SystemInformation,
+              Int32 SystemInformationLength,
+              out Int32 ReturnLength);
+
+            public static byte BootDmaCheck() {
+              Int32 result;
+              Int32 SystemInformationLength = 1;
+              IntPtr SystemInformation = Marshal.AllocHGlobal(SystemInformationLength);
+              Int32 ReturnLength;
+
+              result = NativeMethods.NtQuerySystemInformation(
+                        NativeMethods.SYSTEM_DMA_GUARD_POLICY_INFORMATION.SystemDmaGuardPolicyInformation,
+                        SystemInformation,
+                        SystemInformationLength,
+                        out ReturnLength);
+
+              if (result == 0) {
+                byte info = Marshal.ReadByte(SystemInformation, 0);
+                return info;
+              }
+
+              return 0;
+            }
+          }
+        }
+"@
+
+    Add-Type -TypeDefinition $bootDMAProtectionCheck
+    $bootDMAProtection = ([SystemInfo.NativeMethods]::BootDmaCheck()) -ne 0
+
+    if($bootDMAProtection) {
+        ReportPass "Kernel DMA Protection is on."
+    } else {
+        ReportFail "Kernel DMA Protection is off."
+    }
+
+DisplaySubTitle "Checks Complete"
 # done 
-pause('Done')
+PauseWithMessage('Done')
