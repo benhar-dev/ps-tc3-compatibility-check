@@ -103,30 +103,11 @@ Function GetTcVersion {
     }
 }
 
-Function IsAdministrator {
-    $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
-    return $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-}
-
 Function IsHypervisorHeartbeatServiceStopped {
     if ($global:vmicheartbeatService -eq $null){
         $global:vmicheartbeatService = Get-Service -name vmicheartbeat
     }
     return ($global:vmicheartbeatService.Status -contains 'Stopped')
-}
-
-Function IsDynamicTickDisabled {
-    if ($global:bcdedit -eq $null){
-        $global:bcdedit = bcdedit
-    }
-    return ($global:bcdedit.Contains('disabledynamictick      Yes')) 
-}
-$global:bcdedit = $null
-Function IsUsePlatformTickEnabled {
-    if ($global:bcdedit -eq $null){
-        $global:bcdedit = bcdedit
-    }
-    return ($global:bcdedit.Contains('useplatformtick         Yes')) 
 }
 
 Function IsVirtualizationVTXEnabledInBios {
@@ -147,16 +128,21 @@ Function AssertTrue($testName,$condition,$failMessage){
 }
 
 # ----------------------------------------------------------------------------
+class UserLevel {
+
+    static [bool]IsAdministrator() {
+        $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
+        return $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+    }
+    
+}
 
 class BootConfigurationData {
 
     hidden static [PSCustomObject]$output = $null
 
     static BootConfigurationData(){
-
-        if ([BootConfigurationData]::output -eq $null) {
-            [BootConfigurationData]::Update()        
-        }
+        [BootConfigurationData]::Update()        
     }
 
     static Update() {
@@ -178,23 +164,20 @@ class BootConfigurationData {
     }
 
     static [bool]IsDynamicTickDisabled() {
-        return ([BootConfigurationData]::output.disabledynamictick) 
+        return ([BootConfigurationData]::output.disabledynamictick -eq 'Yes')
+    }
+    
+    static [bool]IsUsePlatformTickEnabled() {
+        return ([BootConfigurationData]::output.useplatformtick -eq 'Yes')
     }
 
+
 }
-
-
-
-
- [BootConfigurationData]::IsDynamicTickDisabled()
-
-exit
-
 
 DisplayTitle "TwinCAT Runtime Compatibility Check (Beta)"
 DisplaySubTitle "Powershell checks"
 
-    if (IsAdministrator) { 
+    if ([UserLevel]::IsAdministrator()) { 
         ReportPass "Script is running as Administrator."
     }else {
         ReportFail "Script not running as Administrator. Please run this script by right clicking and select 'Run as Administrator'"
@@ -213,13 +196,13 @@ if (IsHypervisorHeartbeatServiceStopped) {
 
 DisplaySubTitle "Bios checks"
 
-    if ($bcd.IsDynamicTickDisabled()) { 
+    if ([BootConfigurationData]::IsDynamicTickDisabled()) { 
       ReportPass "Disable dynamic tick has been correctly set."
     }else {
       ReportFail "Disable dynamic tick has not been set. Please run C:\TwinCAT\3.1\System\win8settick.bat as Administrator"
     }
 
-    if (IsUsePlatformTickEnabled) { 
+    if ([BootConfigurationData]::IsUsePlatformTickEnabled()) { 
       ReportPass "Use platform tick has been correctly set."
     }else {
       ReportFail "Use platform tick has not been set. Please run C:\TwinCAT\3.1\System\win8settick.bat as Administrator"
