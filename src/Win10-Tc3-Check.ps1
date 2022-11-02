@@ -28,8 +28,6 @@ if ((Test-Admin) -eq $false)  {
     exit
 }
 
-cls
-
 function DisplayTitle {
 	[CmdletBinding()]
 	param(
@@ -99,12 +97,104 @@ Function PauseWithMessage
 # ----------------------------------------------------------------------------
 
 
+Function GetTcVersion {
+    if (Test-Path 'HKLM:\SOFTWARE\WOW6432Node\Beckhoff\TwinCAT3\System') {
+        return [System.Version](Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Beckhoff\TwinCAT3\System").TcVersion
+    }
+}
+
+Function IsAdministrator {
+    $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
+    return $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+}
+
+Function IsHypervisorHeartbeatServiceStopped {
+    if ($global:vmicheartbeatService -eq $null){
+        $global:vmicheartbeatService = Get-Service -name vmicheartbeat
+    }
+    return ($global:vmicheartbeatService.Status -contains 'Stopped')
+}
+
+Function IsDynamicTickDisabled {
+    if ($global:bcdedit -eq $null){
+        $global:bcdedit = bcdedit
+    }
+    return ($global:bcdedit.Contains('disabledynamictick      Yes')) 
+}
+$global:bcdedit = $null
+Function IsUsePlatformTickEnabled {
+    if ($global:bcdedit -eq $null){
+        $global:bcdedit = bcdedit
+    }
+    return ($global:bcdedit.Contains('useplatformtick         Yes')) 
+}
+
+Function IsVirtualizationVTXEnabledInBios {
+    if ($global:systemInfo -eq $null){
+        $global:systemInfo = systeminfo
+    }
+    return ($global:systemInfo -Like '*Virtualization Enabled In Firmware: Yes') 
+}
+
+Function IsWindowsFeatureDisabled($featureName) {
+    $feature = Get-WindowsOptionalFeature -FeatureName $featureName -Online
+    return ($feature.State -eq "Disabled")
+}
+
+Function AssertTrue($testName,$condition,$failMessage){
+
+
+}
+
+# ----------------------------------------------------------------------------
+
+class BootConfigurationData {
+
+    hidden static [PSCustomObject]$output = $null
+
+    static BootConfigurationData(){
+
+        if ([BootConfigurationData]::output -eq $null) {
+            [BootConfigurationData]::Update()        
+        }
+    }
+
+    static Update() {
+
+        (bcdedit /enum | Out-String) -split '(?<=\r\n)\r\n' | ForEach-Object {
+            $name, $data = $_ -split '\r\n---+\r\n'
+
+            $props = [ordered]@{
+                'name' = $name.Trim()
+            }
+
+            $data | Select-String '(?m)^(\S+)\s\s+(.*)' -AllMatches |
+                Select-Object -Expand Matches |
+                ForEach-Object { $props[$_.Groups[1].Value] = $_.Groups[2].Value.Trim() }
+
+            [BootConfigurationData]::output = [PSCustomObject]$props
+        }
+
+    }
+
+    static [bool]IsDynamicTickDisabled() {
+        return ([BootConfigurationData]::output.disabledynamictick) 
+    }
+
+}
+
+
+
+
+ [BootConfigurationData]::IsDynamicTickDisabled()
+
+exit
+
+
 DisplayTitle "TwinCAT Runtime Compatibility Check (Beta)"
 DisplaySubTitle "Powershell checks"
 
-    $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
-
-    if ($currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) { 
+    if (IsAdministrator) { 
         ReportPass "Script is running as Administrator."
     }else {
         ReportFail "Script not running as Administrator. Please run this script by right clicking and select 'Run as Administrator'"
@@ -114,9 +204,7 @@ DisplaySubTitle "Powershell checks"
 
 DisplaySubTitle "Windows services checks"
 
-$hypervheartbeat = Get-Service -name vmicheartbeat
-
-if ($hypervheartbeat.Status -contains 'Stopped') { 
+if (IsHypervisorHeartbeatServiceStopped) { 
     ReportPass "Hyper-V Heartbeat service is stopped."
 }else {
     ReportFail "Hyper-V Heartbeat service is running. This indicates that Hyper-V is enabled."
@@ -125,24 +213,20 @@ if ($hypervheartbeat.Status -contains 'Stopped') {
 
 DisplaySubTitle "Bios checks"
 
-    # bcd check, these are settings in the bios which are configured using win8settick.bat
-    $bcd = bcdedit
-
-    if ($bcd.Contains('disabledynamictick      Yes')) { 
+    if ($bcd.IsDynamicTickDisabled()) { 
       ReportPass "Disable dynamic tick has been correctly set."
     }else {
       ReportFail "Disable dynamic tick has not been set. Please run C:\TwinCAT\3.1\System\win8settick.bat as Administrator"
     }
 
-    if ($bcd.Contains('useplatformtick         Yes')) { 
+    if (IsUsePlatformTickEnabled) { 
       ReportPass "Use platform tick has been correctly set."
     }else {
       ReportFail "Use platform tick has not been set. Please run C:\TwinCAT\3.1\System\win8settick.bat as Administrator"
     }
 
     # virtualization enabled in firmware check (VT-X)
-    $systemInfo = systeminfo
-    if ($systemInfo -Like '*Virtualization Enabled In Firmware: Yes') { 
+    if (IsVirtualizationVTXEnabledInBios) { 
       ReportPass "Virtualization (VT-X) is enabled In Firmware."
     }else {
       ReportFail "Virtualization (VT-X) is disabled In Firmware."
@@ -152,27 +236,21 @@ DisplaySubTitle "Bios checks"
 DisplaySubTitle "Windows feature checks"
 
     # Windows feature Hyper-V
-    $hyperv = Get-WindowsOptionalFeature -FeatureName Microsoft-Hyper-V-All -Online
-
-    if($hyperv.State -eq "Disabled") {
+    if(IsWindowsFeatureDisabled('Microsoft-Hyper-V-All')) {
         ReportPass "Hyper-V Windows Feature is disabled."
     } else {
         ReportFail "Hyper-V Windows Feature is enabled. You will need to disable this using 'Turn Windows Features On or Off', and unticking Hyper-V"
     }
 
     # Windows feature Windows Sandbox
-    $sandbox = Get-WindowsOptionalFeature -FeatureName Containers-DisposableClientVM -Online
-
-    if($sandbox.State -eq "Disabled") {
+    if(IsWindowsFeatureDisabled('Containers-DisposableClientVM')) {
         ReportPass "Windows Sandbox Feature is disabled."
     } else {
         ReportFail "Windows Sandbox Feature is enabled. You will need to disable this using 'Turn Windows Features On or Off', and unticking Windows Sandbox"
     }
 
     # Windows feature Virtual Machine Platform
-    $virtualMachinePlatform = Get-WindowsOptionalFeature -FeatureName VirtualMachinePlatform -Online
-
-    if($virtualMachinePlatform.State -eq "Disabled") {
+    if(IsWindowsFeatureDisabled('VirtualMachinePlatform')) {
         ReportPass "Virtual Machine Platform Feature is disabled."
     } else {
         ReportFail "Virtual Machine Platform Feature is enabled. You will need to disable this using 'Turn Windows Features On or Off', and unticking Virtual Machine Platform"
@@ -236,5 +314,9 @@ DisplaySubTitle "Kernal checks"
     }
 
 DisplaySubTitle "Checks Complete"
+
+
+
+
 PauseWithMessage('Done')
 Exit
