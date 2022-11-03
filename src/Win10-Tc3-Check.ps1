@@ -132,18 +132,18 @@ class SystemServiceInformation {
 
 class SystemInformation {
 
-    hidden static [System.Array]$output = $null
+    hidden static [PSCustomObject]$output = $null
 
     static SystemInformation(){
         [SystemInformation]::Update()        
     }
 
     static Update() {
-        [SystemInformation]::output = Get-ComputerInfo | More
+            [SystemInformation]::output = systeminfo       
     }
 
     static [bool]IsVirtualisationEnabledInTheFirmware() {
-        return [SystemInformation]::output.HyperVRequirementVirtualizationFirmwareEnabled
+        return [SystemInformation]::output -Like '*Virtualization Enabled In Firmware: Yes'
     }
     
 }
