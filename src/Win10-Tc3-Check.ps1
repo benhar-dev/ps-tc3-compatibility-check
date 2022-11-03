@@ -139,11 +139,11 @@ class SystemInformation {
     }
 
     static Update() {
-        [SystemInformation]::output = Get-ComputerInfo | Get-Member | More
+        [SystemInformation]::output = Get-ComputerInfo | More
     }
 
     static [bool]IsVirtualisationEnabledInTheFirmware() {
-        return [SystemInformation]::output | Where-Object Name -eq 'HyperVRequirementVirtualizationFirmwareEnabled'
+        return [SystemInformation]::output.HyperVRequirementVirtualizationFirmwareEnabled
     }
     
 }
