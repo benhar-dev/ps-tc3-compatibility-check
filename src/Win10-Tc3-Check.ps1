@@ -282,7 +282,10 @@ function Test
     $assertFalse = $false,
     $message = ''
   )
-  if (-not $if) {return}
+  if (-not $if) {
+    ReportSkip $name 
+    return
+  }
 
   if (($assertTrue -eq $true) -and ($assertFalse -eq $false)){
 
@@ -304,6 +307,18 @@ function ReportPass {
     Write-Host -NoNewline '   ['
 	Write-Host -ForegroundColor Green -NoNewLine ([Char]8730)
     Write-Host -NoNewline ']PASS: '
+	Write-Host $info
+}
+
+function ReportSkip {
+	[CmdletBinding()]
+	param(
+		[Parameter()]
+		[string] $info
+	)
+    Write-Host -NoNewline '   ['
+	Write-Host -ForegroundColor Gray -NoNewLine '-'
+    Write-Host -NoNewline ']SKIP: '
 	Write-Host $info
 }
 
