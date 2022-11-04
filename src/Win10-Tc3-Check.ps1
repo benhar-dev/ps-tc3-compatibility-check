@@ -31,33 +31,18 @@ if ([UserInformation]::IsNotAdministrator())  {
 # Helper Window Functions
 # ----------------------------------------------------------------------------
 
-function DisplayTitle {
-	[CmdletBinding()]
-	param(
-		[Parameter()]
-		[string] $title
-	)
+function DisplayTitle ($title) {
 	Write-Host $title
     Write-Host ("-" * $title.Length)
 }
 
-function DisplaySubTitle {
-	[CmdletBinding()]
-	param(
-		[Parameter()]
-		[string] $subtitle
-	)
+function DisplaySubTitle ($subtitle) {
     Write-Host ""
 	Write-Host $subtitle
 }
 
-Function PauseWithMessage
+Function PauseWithMessage ($message)
 {
-    [CmdletBinding()]
-	param(
-		[Parameter()]
-		[string] $message
-	)
     # Check if running Powershell ISE
     if ($psISE)
     {
@@ -73,7 +58,7 @@ Function PauseWithMessage
 }
 
 # ----------------------------------------------------------------------------
-# Helper Classes
+# Helper Classes, used by the tests at the bottom of the script.
 # ----------------------------------------------------------------------------
 
 class TwincatInformation {
@@ -220,7 +205,7 @@ class BootConfigurationData {
 }
 
 # ----------------------------------------------------------------------------
-# .Net Classes
+# .Net Classes, used by the tests at the bottom of the script.
 # ----------------------------------------------------------------------------
 
 $KernalInformationSourceCode = @"
@@ -269,7 +254,7 @@ $KernalInformationSourceCode = @"
 Add-Type -TypeDefinition $KernalInformationSourceCode
 
 # ----------------------------------------------------------------------------
-# Test Functions
+# Test Helper Functions
 # ----------------------------------------------------------------------------
 
 function Test
@@ -298,42 +283,24 @@ function Test
   }
 }
 
-function ReportPass {
-	[CmdletBinding()]
-	param(
-		[Parameter()]
-		[string] $info
-	)
+function ReportPass ($info) {
     Write-Host -NoNewline '   ['
 	Write-Host -ForegroundColor Green -NoNewLine ([Char]8730)
     Write-Host -NoNewline ']PASS: '
 	Write-Host $info
 }
 
-function ReportSkip {
-	[CmdletBinding()]
-	param(
-		[Parameter()]
-		[string] $info
-	)
+function ReportSkip ($info) {
     Write-Host -NoNewline '   ['
 	Write-Host -ForegroundColor Gray -NoNewLine '-'
     Write-Host -NoNewline ']SKIP: '
 	Write-Host $info
 }
 
-function ReportFail {
-	[CmdletBinding()]
-	param(
-		[Parameter()]
-		[string] $info,
-        [string] $message
-	)
+function ReportFail ($info,$message){
     Write-Host -NoNewline '   ['
 	Write-Host -ForegroundColor Red -NoNewLine 'X'
     Write-Host -NoNewline ']FAIL: '
-	
-
     if ($message) {
         Write-Host -NoNewline $info
         Write-Host -NoNewline ' REASON: '
@@ -341,14 +308,14 @@ function ReportFail {
     } else {
         Write-Host $info
     }
-
 }
 
 # ----------------------------------------------------------------------------
-# Start of compatibility checks
+# Start of TwinCAT 3 runtime compatibility checks
+# Feel free to add your tests and checks here.#
 # ----------------------------------------------------------------------------
 
-DisplayTitle "TwinCAT Runtime Compatibility Check (Beta)"
+DisplayTitle "TwinCAT3 Runtime Compatibility Check (Beta)"
 DisplaySubTitle "Powershell checks"
 
     Test 'Script is running as Administrator'`
@@ -397,14 +364,23 @@ DisplaySubTitle "Kernal checks"
 
 DisplaySubTitle "Processor checks"
 
-    Test 'Processor is compatible'`
+    Test 'AMD Ryzan processor vs TwinCAT version compatible'`
         -if([AmdProcessorInformation]::ProcessorIsAmdRyzen())`
         -assertTrue([TwincatInformation]::Version() -ge [System.Version]'3.1.4024.25')`
-        -message "AMD Ryzan Detected. This is only allowed with TwinCAT3 version 3.1.4024.25 and above"
+        -message "AMD Ryzan detected. This is only allowed with TwinCAT3 version 3.1.4024.25 and above"
 
-    # TODO: check required, 11th Gen Intel supported from 4024.22
+    # in progress, requires processor generation check to complete this test
+    Test '11th Gen Intel processor vs TwinCAT version compatible'`
+        -if($false -and [IntelProcessorInformation]::ProcessorIsIntel())`
+        -assertTrue([TwincatInformation]::Version() -ge [System.Version]'3.1.4024.22')`
+        -message "11th Gen Intel processor detected. This is only allowed with TwinCAT3 version 3.1.4024.22 and above"
 
-    # TODO: check required, 12th Gen Intel supported from 4024.32 or 4024.35, needs confirming
+    # in progress, requires processor generation check to complete this test
+    Test '12th Gen Intel processor vs TwinCAT version compatible'`
+        -if($false -and [IntelProcessorInformation]::ProcessorIsIntel())`
+        -assertTrue([TwincatInformation]::Version() -ge [System.Version]'3.1.4024.25')`
+        -message "12th Gen Intel processor detected. This is only allowed with TwinCAT3 version 3.1.4024.32 and above"
+
 
 DisplaySubTitle "Checks Complete"
 PauseWithMessage('Done')
