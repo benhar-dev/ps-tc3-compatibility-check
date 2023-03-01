@@ -27,6 +27,7 @@ if ([UserInformation]::IsNotAdministrator())  {
     exit
 }
 
+
 # ----------------------------------------------------------------------------
 # Helper Window Functions
 # ----------------------------------------------------------------------------
@@ -68,6 +69,14 @@ class TwincatInformation {
             return [System.Version](Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Beckhoff\TwinCAT3\System").TcVersion
         }
          return [System.Version]'0'
+    }
+    
+}
+
+class DeviceGuard {
+
+    static [BOOL]VirtualizationBasedSecurityStatus() {       
+         return (Get-CimInstance –ClassName Win32_DeviceGuard –Namespace root\Microsoft\Windows\DeviceGuard).VirtualizationBasedSecurityStatus
     }
     
 }
@@ -327,6 +336,15 @@ DisplaySubTitle "Windows services checks"
         -assertTrue ([SystemServiceInformation]::IsServiceStopped('vmicheartbeat'))`
         -message "Hyper-V Heartbeat service is running. This indicates that Hyper-V is enabled."
 
+    Test 'Windows Core Isolation: Memory Integrity is off'`
+        -assertFalse ([DeviceGuard]::VirtualizationBasedSecurityStatus())`
+        -message "Windows Core Isolation: Memory Integrity is currently switched on"
+        # This is a new setting in Windows 10 and 11 which can be found by Start > Core Isolation.  
+        # This setting should be set to off.  If this is switched on then you will not only see
+        # TwinCAT giving the error message 'TCRTIME' (200): start of real-time avoided by "HyperV"
+        # but also this may incorrectly cause the "Virtualization (VT-X) is enabled In Bios" check
+        # to incorrectly fail too.
+
 DisplaySubTitle "Bios checks"
 
     Test 'Dynamic Tick Disabled'`
@@ -337,9 +355,9 @@ DisplaySubTitle "Bios checks"
         -assertTrue ([BootConfigurationData]::IsUsePlatformTickEnabled())`
         -message "Use platform tick has not been set. Please run C:\TwinCAT\3.1\System\win8settick.bat as Administrator"
 
-    Test 'Virtualization (VT-X) is enabled In Firmware'`
+    Test 'Virtualization (VT-X) is enabled In Bios'`
         -assertTrue ([SystemInformation]::IsVirtualisationEnabledInTheFirmware())`
-        -message "Virtualization (VT-X) is disabled In Firmware."
+        -message "Virtualization (VT-X) is currently disabled In the Bios. Please enable."
 
 DisplaySubTitle "Windows feature checks"
 
