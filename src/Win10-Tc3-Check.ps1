@@ -342,10 +342,10 @@ DisplaySubTitle "Windows services checks"
         # This is a new setting in Windows 10 and 11 which can be found by Start > Core Isolation.  
         # This setting should be set to off.  If this is switched on then you will not only see
         # TwinCAT giving the error message 'TCRTIME' (200): start of real-time avoided by "HyperV"
-        # but also this may incorrectly cause the "Virtualization (VT-X) is enabled In Bios" check
+        # but also this may incorrectly cause the "Virtualization (VT-X) is enabled In BIOS" check
         # to incorrectly fail too.
 
-DisplaySubTitle "Bios checks"
+DisplaySubTitle "BIOS checks"
 
     Test 'Dynamic Tick Disabled'`
         -assertTrue ([BootConfigurationData]::IsDynamicTickDisabled())`
@@ -355,9 +355,9 @@ DisplaySubTitle "Bios checks"
         -assertTrue ([BootConfigurationData]::IsUsePlatformTickEnabled())`
         -message "Use platform tick has not been set. Please run C:\TwinCAT\3.1\System\win8settick.bat as Administrator"
 
-    Test 'Virtualization (VT-X) is enabled In Bios'`
+    Test 'Virtualization (VT-X) is enabled In BIOS'`
         -assertTrue ([SystemInformation]::IsVirtualisationEnabledInTheFirmware())`
-        -message "Virtualization (VT-X) is currently disabled In the Bios. Please enable."
+        -message "Virtualization (VT-X) is currently disabled In the BIOS. Please enable."
 
 DisplaySubTitle "Windows feature checks"
 
@@ -382,10 +382,10 @@ DisplaySubTitle "Kernal checks"
 
 DisplaySubTitle "Processor checks"
 
-    Test 'AMD Ryzan processor vs TwinCAT version compatible'`
+    Test 'AMD Ryzen processor vs TwinCAT version compatible'`
         -if([AmdProcessorInformation]::ProcessorIsAmdRyzen())`
         -assertTrue([TwincatInformation]::Version() -ge [System.Version]'3.1.4024.25')`
-        -message "AMD Ryzan detected. This is only allowed with TwinCAT3 version 3.1.4024.25 and above"
+        -message "AMD Ryzen detected. This is only allowed with TwinCAT3 version 3.1.4024.25 and above"
 
     # in progress, requires processor generation check to complete this test
     Test '11th Gen Intel processor vs TwinCAT version compatible'`
