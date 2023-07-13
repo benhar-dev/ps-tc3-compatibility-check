@@ -124,7 +124,7 @@ class TwincatInformation {
         if (Test-Path 'HKLM:\SOFTWARE\WOW6432Node\Beckhoff\TwinCAT3\System') {
             return [System.Version](Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Beckhoff\TwinCAT3\System").TcVersion
         }
-         return [System.Version]'0'
+         return [System.Version]'0.0'
     }
     
 }

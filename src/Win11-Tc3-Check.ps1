@@ -124,7 +124,7 @@ class TwincatInformation {
         if (Test-Path 'HKLM:\SOFTWARE\WOW6432Node\Beckhoff\TwinCAT3\System') {
             return [System.Version](Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Beckhoff\TwinCAT3\System").TcVersion
         }
-         return [System.Version]'0'
+         return [System.Version]'0.0'
     }
     
 }
@@ -399,7 +399,7 @@ DisplaySubTitle "Windows services checks"
         -message "Hyper-V Heartbeat service is running. This indicates that Hyper-V is enabled."
 
     Test 'Virtualization-based Security: VirtualizationBasedSecurityStatus is disabled.'`
-        -assertTrue ([DeviceGuard]::VirtualizationBasedSecurityStatus())`
+        -assertFalse ([DeviceGuard]::VirtualizationBasedSecurityStatus())`
         -gistUrl "https://gist.githubusercontent.com/benhar-dev/1403b4e070655787c3f8ff1e15b1ab73/raw/"
 
 DisplaySubTitle "BIOS checks"
