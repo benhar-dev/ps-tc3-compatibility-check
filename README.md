@@ -29,6 +29,17 @@ Depending on your system settings you may see the following error message.
 
 This simply means that your current computer setup will not run powershell scripts.  You can adjust these settings in order to run this script, then once complete you can return them to their previous state.  
 
+IMPORTANT DISCLAIMER
+--------------------
+
+The procedures and recommendations outlined in this guide involve modifying essential security settings of your Windows operating system. Please understand that such changes can significantly increase your system's vulnerability to various security threats, including but not limited to malware, hacking, and data loss.
+
+By choosing to proceed, you acknowledge that you are doing so with a full understanding and acceptance of the potential risks involved. These include increased vulnerability to security threats, possible data loss, adverse impacts on system performance, or even total system failure.
+
+Responsibility for assessing the potential impact on your system and deciding whether to proceed lies entirely with you. We neither endorse nor recommend making these changes unless you are thoroughly familiar with the system settings involved and are fully prepared to accept all potential consequences.
+
+If you decide to proceed, you do so at your own risk. We will not be held responsible or liable for any negative outcomes, including but not limited to system vulnerability, data loss, or other adverse effects resulting from the application of the procedures and recommendations outlined in this guide.
+
 ### Step 1 - Open Powershell as Administrator
 Click on your start menu, type powershell, then click Run as administrator
 ![image](./docs/images/admin.png)
