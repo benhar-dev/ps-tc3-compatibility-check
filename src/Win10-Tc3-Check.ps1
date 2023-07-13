@@ -1,5 +1,5 @@
 ﻿# -------------------------------------------------------------------------------------------------------------------------------
-# Copyright 2022 benhar-dev
+# Copyright 2023 benhar-dev
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation 
 # files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, 
@@ -27,6 +27,62 @@ if ([UserInformation]::IsNotAdministrator())  {
     exit
 }
 
+# ----------------------------------------------------------------------------
+# Disclaimer
+# ----------------------------------------------------------------------------
+
+$warningMessage = @"
+IMPORTANT DISCLAIMER
+
+The procedures and recommendations outlined in this guide involve modifying essential security settings of your Windows operating system. Please understand that such changes can significantly increase your system's vulnerability to various security threats, including but not limited to malware, hacking, and data loss.
+
+By choosing to proceed, you acknowledge that you are doing so with a full understanding and acceptance of the potential risks involved. These include increased vulnerability to security threats, possible data loss, adverse impacts on system performance, or even total system failure.
+
+Responsibility for assessing the potential impact on your system and deciding whether to proceed lies entirely with you. We neither endorse nor recommend making these changes unless you are thoroughly familiar with the system settings involved and are fully prepared to accept all potential consequences.
+
+If you decide to proceed, you do so at your own risk. We will not be held responsible or liable for any negative outcomes, including but not limited to system vulnerability, data loss, or other adverse effects resulting from the application of the procedures and recommendations outlined in this guide.
+
+Press 'C' to continue or 'X' to exit.
+"@
+
+Write-Host $warningMessage -ForegroundColor Red
+
+while ($true) {
+    $response = Read-Host "Enter your choice"
+    if ($response -eq 'c') {
+        Write-Host "You chose to continue, proceeding with the script..."
+        # Place the rest of your script here
+        break
+    } elseif ($response -eq 'x') {
+        Write-Host "You chose to exit. Script will now terminate."
+        exit
+    } else {
+        Write-Host "Invalid choice. Please press 'C' to continue or 'X' to exit." -ForegroundColor Yellow
+    }
+}
+
+Clear-Host
+
+# ----------------------------------------------------------------------------
+# Helper guides functions
+# ----------------------------------------------------------------------------
+
+function ShowGuide ($gistUrl) {
+
+    try {
+        $response = Invoke-RestMethod -Uri $gistUrl -Method Get
+        Write-Host ""
+        Write-Host "Extra Information on the failed test" -ForegroundColor Yellow
+        Write-Host "====================================" -ForegroundColor Yellow
+        Write-Host ""
+        Write-Host $response -ForegroundColor Cyan
+        Write-Host ""
+        Write-Host ""
+    }
+    catch {
+        Write-Host "Failed to get the content from the URL '$gistUrl'."
+    }
+}
 
 # ----------------------------------------------------------------------------
 # Helper Window Functions
@@ -274,7 +330,8 @@ function Test
   	$if = $true,
   	$assertTrue = $true,
     $assertFalse = $false,
-    $message = ''
+    $message = '',
+    $gistUrl = ''
   )
   if (-not $if) {
     ReportSkip $name 
@@ -288,6 +345,11 @@ function Test
   } else {
 
     ReportFail $name $message
+
+    DisplaySubTitle "Checks Failed. Test Aborted"
+    ShowGuide($gistUrl)
+    PauseWithMessage('Fail')
+    Exit
 
   }
 }
