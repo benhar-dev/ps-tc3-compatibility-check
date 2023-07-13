@@ -20,8 +20,13 @@ This is a collection of powershell scripts used to identify common TwinCAT 3 inc
 ## Screenshot
 ![image](./docs/images/Screenshot.gif)
 
-## Getting Started - Windows 10
+## Getting Started
+
+### Windows 10
 Right click Win10-Tc3-Check.ps1 and select "Run with Powershell"
+
+### Windows 11
+Right click Win11-Tc3-Check.ps1 and select "Run with Powershell"
 
 ## Troubleshooting
 Depending on your system settings you may see the following error message. 
