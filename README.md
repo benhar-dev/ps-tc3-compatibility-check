@@ -24,10 +24,12 @@ This is a collection of powershell scripts used to identify common TwinCAT 3 inc
 
 ### Step 1 - Open Powershell as Administrator
 Click on your start menu, type cmd, then click Run as administrator
+
 ![image](./docs/images/admin.png)
 
 ### Step 2 - Navigate to the script location
 The location of your script may differ!
+
 ![image](./docs/images/folder.png)
 
 ### Step 3 - Run the script with using the bypass flag
@@ -44,8 +46,8 @@ powershell -ExecutionPolicy Bypass -File .\Win11-Tc3-Check.ps1
 
 ### Step 4 - Read the disclaimer
 Press C if you agree or X to exit
-![image](./docs/images/ctocontinue.png)
 
+![image](./docs/images/ctocontinue.png)
 
 ### Troubleshooting
 Depending on your system settings you may see the following error message. 
