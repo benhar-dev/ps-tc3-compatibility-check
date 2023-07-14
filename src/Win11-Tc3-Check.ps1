@@ -64,24 +64,29 @@ while ($true) {
 Clear-Host
 
 # ----------------------------------------------------------------------------
-# Helper guides functions
+# Helper message functions
 # ----------------------------------------------------------------------------
 
-function ShowGuide ($gistUrl) {
+function GetMessageFromUrl ($messageUrl) {
 
     try {
-        $response = Invoke-RestMethod -Uri $gistUrl -Method Get
-        Write-Host ""
-        Write-Host "Extra Information on the failed test" -ForegroundColor Yellow
-        Write-Host "====================================" -ForegroundColor Yellow
-        Write-Host ""
-        Write-Host $response -ForegroundColor Cyan
-        Write-Host ""
-        Write-Host ""
+        $response = Invoke-RestMethod -Uri $messageUrl -Method Get
+        ShowMessage ($response)
     }
     catch {
-        Write-Host "Failed to get the content from the URL '$gistUrl'."
+        Write-Host "Failed to get the content from the URL '$messageUrl'."
     }
+}
+
+function ShowMessage ($message) {
+    Write-Host ""
+    Write-Host ""
+    Write-Host "Extra Information on the failed test" -ForegroundColor Yellow
+    Write-Host "====================================" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host $message -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host ""
 }
 
 # ----------------------------------------------------------------------------
@@ -273,13 +278,13 @@ class BootConfigurationData {
 # .Net Classes, used by the tests at the bottom of the script.
 # ----------------------------------------------------------------------------
 
-$KernalInformationSourceCode = @"
+$KernelInformationSourceCode = @"
     namespace SystemInfo
     {
         using System;
         using System.Runtime.InteropServices;
 
-        public static class KernalInformation
+        public static class KernelInformation
         {
             internal enum SYSTEM_DMA_GUARD_POLICY_INFORMATION : int
             {
@@ -300,8 +305,8 @@ $KernalInformationSourceCode = @"
                 IntPtr SystemInformation = Marshal.AllocHGlobal(SystemInformationLength);
                 Int32 ReturnLength;
 
-                result = KernalInformation.NtQuerySystemInformation(
-                        KernalInformation.SYSTEM_DMA_GUARD_POLICY_INFORMATION.SystemDmaGuardPolicyInformation,
+                result = KernelInformation.NtQuerySystemInformation(
+                        KernelInformation.SYSTEM_DMA_GUARD_POLICY_INFORMATION.SystemDmaGuardPolicyInformation,
                         SystemInformation,
                         SystemInformationLength,
                         out ReturnLength);
@@ -316,7 +321,7 @@ $KernalInformationSourceCode = @"
         }
     }
 "@
-Add-Type -TypeDefinition $KernalInformationSourceCode
+Add-Type -TypeDefinition $KernelInformationSourceCode
 
 # ----------------------------------------------------------------------------
 # Test Helper Functions
@@ -331,7 +336,7 @@ function Test
   	$assertTrue = $true,
     $assertFalse = $false,
     $message = '',
-    $gistUrl = ''
+    $messageUrl = ''
   )
   if (-not $if) {
     ReportSkip $name 
@@ -347,10 +352,15 @@ function Test
     ReportFail $name $message
 
     DisplaySubTitle "Checks Failed. Test Aborted"
-    ShowGuide($gistUrl)
+
+    if ($message) {
+        ShowMessage($message)
+    } else {
+        GetMessageFromUrl($messageUrl)
+    }
+    
     PauseWithMessage('Fail')
     Exit
-
   }
 }
 
@@ -368,17 +378,11 @@ function ReportSkip ($info) {
 	Write-Host $info
 }
 
-function ReportFail ($info,$message){
+function ReportFail ($info) {
     Write-Host -NoNewline '   ['
 	Write-Host -ForegroundColor Red -NoNewLine 'X'
     Write-Host -NoNewline ']FAIL: '
-    if ($message) {
-        Write-Host -NoNewline $info
-        Write-Host -NoNewline ' REASON: '
-        Write-Host $message
-    } else {
-        Write-Host $info
-    }
+    Write-Host $info
 }
 
 # ----------------------------------------------------------------------------
@@ -399,8 +403,8 @@ DisplaySubTitle "Windows services checks"
         -message "Hyper-V Heartbeat service is running. This indicates that Hyper-V is enabled."
 
     Test 'Virtualization-based Security: VirtualizationBasedSecurityStatus is disabled.'`
-        -assertFalse ([DeviceGuard]::VirtualizationBasedSecurityStatus())`
-        -gistUrl "https://gist.githubusercontent.com/benhar-dev/1403b4e070655787c3f8ff1e15b1ab73/raw/"
+        -assertTrue ([DeviceGuard]::VirtualizationBasedSecurityStatus())`
+        -messageUrl "https://gist.githubusercontent.com/benhar-dev/1403b4e070655787c3f8ff1e15b1ab73/raw/"
 
 DisplaySubTitle "BIOS checks"
 
@@ -430,11 +434,11 @@ DisplaySubTitle "Windows feature checks"
         -assertTrue ([WindowsFeatureInformation]::IsWindowsFeatureDisabled('VirtualMachinePlatform'))`
         -message "Virtual Machine Platform Feature is enabled. You will need to disable this using 'Turn Windows Features On or Off', and unticking Virtual Machine Platform"
 
-DisplaySubTitle "Kernal checks"
+DisplaySubTitle "Kernel checks"
 
     Test 'Kernel DMA Protection is off'`
         -if ([TwincatInformation]::Version() -lt [System.Version]'3.1.4024.17')`
-        -assertFalse ([SystemInfo.KernalInformation]::BootDmaEnabled())`
+        -assertFalse ([SystemInfo.KernelInformation]::BootDmaEnabled())`
         -message "Kernel DMA Protection is on. This is only allowed with TwinCAT3 version 3.1.4024.17 and above"
 
 DisplaySubTitle "Processor checks"
