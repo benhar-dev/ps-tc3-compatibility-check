@@ -404,7 +404,7 @@ DisplaySubTitle "Windows services checks"
 
     Test 'Virtualization-based Security: VirtualizationBasedSecurityStatus is disabled.'`
         -assertFalse ([DeviceGuard]::VirtualizationBasedSecurityStatus())`
-        -messageUrl "https://gist.githubusercontent.com/benhar-dev/1403b4e070655787c3f8ff1e15b1ab73/raw/"
+        -messageUrl "https://gist.githubusercontent.com/benhar-dev/1403b4e070655787c3f8ff1e15b1ab73/raw/Windows11-VirtualizationBasedSecurityStatus.md"
 
 DisplaySubTitle "BIOS checks"
 
