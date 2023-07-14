@@ -403,7 +403,7 @@ DisplaySubTitle "Windows services checks"
         -message "Hyper-V Heartbeat service is running. This indicates that Hyper-V is enabled."
 
     Test 'Virtualization-based Security: VirtualizationBasedSecurityStatus is disabled.'`
-        -assertTrue ([DeviceGuard]::VirtualizationBasedSecurityStatus())`
+        -assertFalse ([DeviceGuard]::VirtualizationBasedSecurityStatus())`
         -messageUrl "https://gist.githubusercontent.com/benhar-dev/1403b4e070655787c3f8ff1e15b1ab73/raw/"
 
 DisplaySubTitle "BIOS checks"
