@@ -20,7 +20,7 @@
 
 param([switch]$Elevated)
 
-if ([UserInformation]::IsNotAdministrator())  {
+if ([UserInformation]::IsNotAdministrator()) {
     if (-not $Elevated) {
         Start-Process powershell.exe -Verb RunAs -ArgumentList ('-noprofile -noexit -file "{0}" -elevated' -f ($myinvocation.MyCommand.Definition))
     }
@@ -53,10 +53,12 @@ while ($true) {
         Write-Host "You chose to continue, proceeding with the script..."
         # Place the rest of your script here
         break
-    } elseif ($response -eq 'x') {
+    }
+    elseif ($response -eq 'x') {
         Write-Host "You chose to exit. Script will now terminate."
         exit
-    } else {
+    }
+    else {
         Write-Host "Invalid choice. Please press 'C' to continue or 'X' to exit." -ForegroundColor Yellow
     }
 }
@@ -94,28 +96,25 @@ function ShowMessage ($message) {
 # ----------------------------------------------------------------------------
 
 function DisplayTitle ($title) {
-	Write-Host $title
+    Write-Host $title
     Write-Host ("-" * $title.Length)
 }
 
 function DisplaySubTitle ($subtitle) {
     Write-Host ""
-	Write-Host $subtitle
+    Write-Host $subtitle
 }
 
-Function PauseWithMessage ($message)
-{
+Function PauseWithMessage ($message) {
     # Check if running Powershell ISE
-    if ($psISE)
-    {
+    if ($psISE) {
         Add-Type -AssemblyName System.Windows.Forms
         [System.Windows.Forms.MessageBox]::Show("$message")
     }
-    else
-    {
+    else {
         Write-Host "$message"
         Write-Host "Press Any Key..."
-        $x = $host.ui.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+        $host.ui.RawUI.ReadKey("NoEcho,IncludeKeyDown") | Out-Null
     }
 }
 
@@ -129,7 +128,7 @@ class TwincatInformation {
         if (Test-Path 'HKLM:\SOFTWARE\WOW6432Node\Beckhoff\TwinCAT3\System') {
             return [System.Version](Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Beckhoff\TwinCAT3\System").TcVersion
         }
-         return [System.Version]'0.0'
+        return [System.Version]'0.0'
     }
     
 }
@@ -137,7 +136,7 @@ class TwincatInformation {
 class DeviceGuard {
 
     static [BOOL]VirtualizationBasedSecurityStatus() {     
-         return (Get-CimInstance –ClassName Win32_DeviceGuard –Namespace root\Microsoft\Windows\DeviceGuard).VirtualizationBasedSecurityStatus
+        return (Get-CimInstance –ClassName Win32_DeviceGuard –Namespace root\Microsoft\Windows\DeviceGuard).VirtualizationBasedSecurityStatus
     }
     
 }
@@ -149,7 +148,7 @@ class UserInformation {
         return $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
     }
 
-     static [bool]IsNotAdministrator() {
+    static [bool]IsNotAdministrator() {
         return -Not [UserInformation]::IsAdministrator()
     }
     
@@ -189,12 +188,12 @@ class SystemInformation {
 
     hidden static [PSCustomObject]$output = $null
 
-    static SystemInformation(){
+    static SystemInformation() {
         [SystemInformation]::Update()        
     }
 
     static Update() {
-            [SystemInformation]::output = systeminfo       
+        [SystemInformation]::output = systeminfo       
     }
 
     static [bool]IsVirtualisationEnabledInTheFirmware() {
@@ -207,7 +206,7 @@ class ProcessorInformation {
 
     hidden static [PSCustomObject]$output = $null
 
-    static ProcessorInformation(){
+    static ProcessorInformation() {
         [IntelProcessorInformation]::Update()        
     }
 
@@ -241,7 +240,7 @@ class BootConfigurationData {
 
     hidden static [PSCustomObject]$output = $null
 
-    static BootConfigurationData(){
+    static BootConfigurationData() {
         [BootConfigurationData]::Update()        
     }
 
@@ -255,8 +254,8 @@ class BootConfigurationData {
             }
 
             $data | Select-String '(?m)^(\S+)\s\s+(.*)' -AllMatches |
-                Select-Object -Expand Matches |
-                ForEach-Object { $props[$_.Groups[1].Value] = $_.Groups[2].Value.Trim() }
+            Select-Object -Expand Matches |
+            ForEach-Object { $props[$_.Groups[1].Value] = $_.Groups[2].Value.Trim() }
 
             [BootConfigurationData]::output = [PSCustomObject]$props
         }
@@ -327,60 +326,61 @@ Add-Type -TypeDefinition $KernelInformationSourceCode
 # Test Helper Functions
 # ----------------------------------------------------------------------------
 
-function Test
-{
-  param
-  (
-    $name,
-  	$if = $true,
-  	$assertTrue = $true,
-    $assertFalse = $false,
-    $message = '',
-    $messageUrl = ''
-  )
-  if (-not $if) {
-    ReportSkip $name 
-    return
-  }
-
-  if (($assertTrue -eq $true) -and ($assertFalse -eq $false)){
-
-    ReportPass $name
-
-  } else {
-
-    ReportFail $name $message
-
-    DisplaySubTitle "Checks Failed. Test Aborted"
-
-    if ($message) {
-        ShowMessage($message)
-    } else {
-        GetMessageFromUrl($messageUrl)
+function Test {
+    param
+    (
+        $name,
+        $if = $true,
+        $assertTrue = $true,
+        $assertFalse = $false,
+        $message = '',
+        $messageUrl = ''
+    )
+    if (-not $if) {
+        ReportSkip $name 
+        return
     }
+
+    if (($assertTrue -eq $true) -and ($assertFalse -eq $false)) {
+
+        ReportPass $name
+
+    }
+    else {
+
+        ReportFail $name $message
+
+        DisplaySubTitle "Checks Failed. Test Aborted"
+
+        if ($message) {
+            ShowMessage($message)
+        }
+        else {
+            GetMessageFromUrl($messageUrl)
+        }
     
-    PauseWithMessage('Fail')
-    Exit
-  }
+        PauseWithMessage('Fail')
+        Exit
+    }
 }
 
 function ReportPass ($info) {
     Write-Host -NoNewline '   ['
-	Write-Host -ForegroundColor Green -NoNewLine ([Char]8730)
+    Write-Host -ForegroundColor Green -NoNewLine ([Char]8730)
     Write-Host -NoNewline ']PASS: '
-	Write-Host $info
+    Write-Host $info
 }
 
 function ReportSkip ($info) {
     Write-Host -NoNewline '   ['
-	Write-Host -ForegroundColor Gray -NoNewLine '-'
+    Write-Host -ForegroundColor Gray -NoNewLine '-'
     Write-Host -NoNewline ']SKIP: '
-	Write-Host $info
+    Write-Host $info
 }
 
 function ReportFail ($info) {
     Write-Host -NoNewline '   ['
-	Write-Host -ForegroundColor Red -NoNewLine 'X'
+    Write-Host -ForegroundColor Red -NoNewLine 'X'
     Write-Host -NoNewline ']FAIL: '
     Write-Host $info
 }
@@ -393,77 +393,77 @@ function ReportFail ($info) {
 DisplayTitle "TwinCAT3 Runtime Compatibility Check (Beta)"
 DisplaySubTitle "Powershell checks"
 
-    Test 'Script is running as Administrator'`
-        -assertTrue ([UserInformation]::IsAdministrator())
-
-DisplaySubTitle "Windows services checks"
-
-    Test 'Hyper-V Heartbeat service is stopped'`
-        -assertTrue ([SystemServiceInformation]::IsServiceStopped('vmicheartbeat'))`
-        -message "Hyper-V Heartbeat service is running. This indicates that Hyper-V is enabled."
-
-    Test 'Windows Core Isolation: Memory Integrity is off'`
-        -assertFalse ([DeviceGuard]::VirtualizationBasedSecurityStatus())`
-        -message "Windows Core Isolation: Memory Integrity is currently switched on"
-        # This is a new setting in Windows 10 and 11 which can be found by Start > Core Isolation.  
-        # This setting should be set to off.  If this is switched on then you will not only see
-        # TwinCAT giving the error message 'TCRTIME' (200): start of real-time avoided by "HyperV"
-        # but also this may incorrectly cause the "Virtualization (VT-X) is enabled In BIOS" check
-        # to incorrectly fail too.
-
-DisplaySubTitle "BIOS checks"
-
-    Test 'Dynamic Tick Disabled'`
-        -assertTrue ([BootConfigurationData]::IsDynamicTickDisabled())`
-        -message "Disable dynamic tick has not been set. Please run C:\TwinCAT\3.1\System\win8settick.bat as Administrator"
-    
-    Test 'Use Platform Tick Enabled'`
-        -assertTrue ([BootConfigurationData]::IsUsePlatformTickEnabled())`
-        -message "Use platform tick has not been set. Please run C:\TwinCAT\3.1\System\win8settick.bat as Administrator"
-
-    Test 'Virtualization (VT-X) is enabled In BIOS'`
-        -assertTrue ([SystemInformation]::IsVirtualisationEnabledInTheFirmware())`
-        -message "Virtualization (VT-X) is currently disabled In the BIOS. Please enable."
+Test 'Script is running as Administrator'`
+    -assertTrue ([UserInformation]::IsAdministrator())
 
 DisplaySubTitle "Windows feature checks"
 
-    Test 'Hyper-V Windows Feature is disabled'`
-        -assertTrue ([WindowsFeatureInformation]::IsWindowsFeatureDisabled('Microsoft-Hyper-V-All'))`
-        -message "Hyper-V Windows Feature is enabled. You will need to disable this using 'Turn Windows Features On or Off', and unticking Hyper-V"
+Test 'Hyper-V Windows Feature is disabled'`
+    -assertTrue ([WindowsFeatureInformation]::IsWindowsFeatureDisabled('Microsoft-Hyper-V-All'))`
+    -message "Hyper-V Windows Feature is enabled. You will need to disable this using 'Turn Windows Features On or Off', and unticking Hyper-V"
 
-    Test 'Windows Sandbox Feature is disabled'`
-        -assertTrue ([WindowsFeatureInformation]::IsWindowsFeatureDisabled('Containers-DisposableClientVM'))`
-        -message "Windows Sandbox Feature is enabled. You will need to disable this using 'Turn Windows Features On or Off', and unticking Windows Sandbox"
+Test 'Windows Sandbox Feature is disabled'`
+    -assertTrue ([WindowsFeatureInformation]::IsWindowsFeatureDisabled('Containers-DisposableClientVM'))`
+    -message "Windows Sandbox Feature is enabled. You will need to disable this using 'Turn Windows Features On or Off', and unticking Windows Sandbox"
 
-    Test 'Virtual Machine Platform Feature is disabled'`
-        -assertTrue ([WindowsFeatureInformation]::IsWindowsFeatureDisabled('VirtualMachinePlatform'))`
-        -message "Virtual Machine Platform Feature is enabled. You will need to disable this using 'Turn Windows Features On or Off', and unticking Virtual Machine Platform"
+Test 'Virtual Machine Platform Feature is disabled'`
+    -assertTrue ([WindowsFeatureInformation]::IsWindowsFeatureDisabled('VirtualMachinePlatform'))`
+    -message "Virtual Machine Platform Feature is enabled. You will need to disable this using 'Turn Windows Features On or Off', and unticking Virtual Machine Platform"
+
+DisplaySubTitle "Windows services checks"
+
+Test 'Hyper-V Heartbeat service is stopped'`
+    -assertTrue ([SystemServiceInformation]::IsServiceStopped('vmicheartbeat'))`
+    -message "Hyper-V Heartbeat service is running. This indicates that Hyper-V is enabled."
+
+Test 'Windows Core Isolation: Memory Integrity is off'`
+    -assertFalse ([DeviceGuard]::VirtualizationBasedSecurityStatus())`
+    -message "Windows Core Isolation: Memory Integrity is currently switched on"
+# This is a new setting in Windows 10 and 11 which can be found by Start > Core Isolation.  
+# This setting should be set to off.  If this is switched on then you will not only see
+# TwinCAT giving the error message 'TCRTIME' (200): start of real-time avoided by "HyperV"
+# but also this may incorrectly cause the "Virtualization (VT-X) is enabled In BIOS" check
+# to incorrectly fail too.
+
+DisplaySubTitle "BIOS checks"
+
+Test 'Dynamic Tick Disabled'`
+    -assertTrue ([BootConfigurationData]::IsDynamicTickDisabled())`
+    -message "Disable dynamic tick has not been set. Please run C:\TwinCAT\3.1\System\win8settick.bat as Administrator"
+    
+Test 'Use Platform Tick Enabled'`
+    -assertTrue ([BootConfigurationData]::IsUsePlatformTickEnabled())`
+    -message "Use platform tick has not been set. Please run C:\TwinCAT\3.1\System\win8settick.bat as Administrator"
+
+Test 'Virtualization (VT-X) is enabled In BIOS'`
+    -assertTrue ([SystemInformation]::IsVirtualisationEnabledInTheFirmware())`
+    -message "Virtualization (VT-X) is currently disabled In the BIOS. Please enable."
 
 DisplaySubTitle "Kernel checks"
 
-    Test 'Kernel DMA Protection is off'`
-        -if ([TwincatInformation]::Version() -lt [System.Version]'3.1.4024.17')`
-        -assertFalse ([SystemInfo.KernelInformation]::BootDmaEnabled())`
-        -message "Kernel DMA Protection is on. This is only allowed with TwinCAT3 version 3.1.4024.17 and above"
+Test 'Kernel DMA Protection is off'`
+    -if ([TwincatInformation]::Version() -lt [System.Version]'3.1.4024.17')`
+    -assertFalse ([SystemInfo.KernelInformation]::BootDmaEnabled())`
+    -message "Kernel DMA Protection is on. This is only allowed with TwinCAT3 version 3.1.4024.17 and above"
 
 DisplaySubTitle "Processor checks"
 
-    Test 'AMD Ryzen processor vs TwinCAT version compatible'`
-        -if([AmdProcessorInformation]::ProcessorIsAmdRyzen())`
-        -assertTrue([TwincatInformation]::Version() -ge [System.Version]'3.1.4024.25')`
-        -message "AMD Ryzen detected. This is only allowed with TwinCAT3 version 3.1.4024.25 and above"
+Test 'AMD Ryzen processor vs TwinCAT version compatible'`
+    -if([AmdProcessorInformation]::ProcessorIsAmdRyzen())`
+    -assertTrue([TwincatInformation]::Version() -ge [System.Version]'3.1.4024.25')`
+    -message "AMD Ryzen detected. This is only allowed with TwinCAT3 version 3.1.4024.25 and above"
 
-    # in progress, requires processor generation check to complete this test
-    Test '11th Gen Intel processor vs TwinCAT version compatible'`
-        -if($false -and [IntelProcessorInformation]::ProcessorIsIntel())`
-        -assertTrue([TwincatInformation]::Version() -ge [System.Version]'3.1.4024.22')`
-        -message "11th Gen Intel processor detected. This is only allowed with TwinCAT3 version 3.1.4024.22 and above"
+# in progress, requires processor generation check to complete this test
+Test '11th Gen Intel processor vs TwinCAT version compatible'`
+    -if($false -and [IntelProcessorInformation]::ProcessorIsIntel())`
+    -assertTrue([TwincatInformation]::Version() -ge [System.Version]'3.1.4024.22')`
+    -message "11th Gen Intel processor detected. This is only allowed with TwinCAT3 version 3.1.4024.22 and above"
 
-    # in progress, requires processor generation check to complete this test
-    Test '12th Gen Intel processor vs TwinCAT version compatible'`
-        -if($false -and [IntelProcessorInformation]::ProcessorIsIntel())`
-        -assertTrue([TwincatInformation]::Version() -ge [System.Version]'3.1.4024.25')`
-        -message "12th Gen Intel processor detected. This is only allowed with TwinCAT3 version 3.1.4024.32 and above"
+# in progress, requires processor generation check to complete this test
+Test '12th Gen Intel processor vs TwinCAT version compatible'`
+    -if($false -and [IntelProcessorInformation]::ProcessorIsIntel())`
+    -assertTrue([TwincatInformation]::Version() -ge [System.Version]'3.1.4024.25')`
+    -message "12th Gen Intel processor detected. This is only allowed with TwinCAT3 version 3.1.4024.32 and above"
 
 
 DisplaySubTitle "Checks Complete"
